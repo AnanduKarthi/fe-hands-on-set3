@@ -58,7 +58,8 @@ describe('RoomBookingPage', () => {
   it('falls back to the first room when the URL has an unknown room, and writes it to the URL', async () => {
     setup(`/room-booking?room=nope&date=${DATE}`)
     await schedule()
-    expect(screen.getByTestId('location')).toHaveTextContent(`?room=r1&date=${DATE}`)
+    // React Router applies navigations as transitions, so the URL can update a tick after render.
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(`?room=r1&date=${DATE}`))
   })
 
   it('blocks 10:30–11:30 over 10:00–11:00 next to the field, then books 11:00–12:00', async () => {
