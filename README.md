@@ -4,7 +4,7 @@ A small meeting room booking app built with **React + TypeScript (strict)**. Eac
 
 | # | Question     | PR link |
 | - | ------------ | ------- |
-| 1 | Room Booking | _pending_ |
+| 1 | Room Booking | [#1](https://github.com/AnanduKarthi/fe-hands-on-set3/pull/1) |
 | 2 | Find a Time  | _pending_ |
 
 ## Run it
