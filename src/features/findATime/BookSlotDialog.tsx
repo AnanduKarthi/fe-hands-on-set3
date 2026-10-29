@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useApi } from '../../api/ApiContext'
-import { ApiError, errorMessage, type Booking, type ISODate, type Interval } from '../../api/types'
+import { ApiError, errorMessage, type Booking, type ISODate, type Interval, type Room } from '../../api/types'
 import { formatRange, formatTime } from '../../lib/time'
 import { roomsThatFit, startOptions } from './slotBooking'
 import { useRoomsWithBookings } from './useRoomsWithBookings'
@@ -11,7 +11,7 @@ interface Props {
   date: ISODate
   attendees: string[]
   onClose: () => void
-  onBooked: (booking: Booking) => void
+  onBooked: (booking: Booking, room: Room) => void
   /** Someone else took the time meanwhile; the page shows the reason and recalculates. */
   onConflict: (message: string) => void
 }
@@ -55,7 +55,7 @@ export function BookSlotDialog({ slot, durationMinutes, date, attendees, onClose
     setError(undefined)
     try {
       const booking = await api.createGroupBooking({ ...range, roomId: room.id, date, title: title.trim(), attendees })
-      onBooked(booking)
+      onBooked(booking, room)
     } catch (err) {
       if (err instanceof ApiError && err.kind === 'conflict') {
         onConflict(err.message)

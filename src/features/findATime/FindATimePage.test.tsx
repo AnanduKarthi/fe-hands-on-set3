@@ -122,7 +122,7 @@ describe('FindATimePage', () => {
     expect(await within(dialog).findByLabelText('Room')).toHaveValue('small')
     await user.click(within(dialog).getByRole('button', { name: 'Book' }))
 
-    expect(await screen.findByText(/Booked “Team meeting” 11:00–11:30/)).toBeInTheDocument()
+    expect(await screen.findByText(/Booked “Team meeting” 11:00–11:30 in Small/)).toBeInTheDocument()
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({ roomId: 'small', start: 660, end: 690, attendees: ['a@example.com', 'b@example.com'] }),
     )

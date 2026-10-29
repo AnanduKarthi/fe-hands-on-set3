@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { PERSON_A, PERSON_B } from '../../api/seed'
-import type { Booking, Interval, Person } from '../../api/types'
+import type { Booking, Interval, Person, Room } from '../../api/types'
 import { atLeast, clipToWindow, gapsBetween, mergeIntervals } from '../../lib/freeSlots'
 import { WORKING_DAY, formatRange, isISODate, todayISO } from '../../lib/time'
 import { AttendeePicker } from './AttendeePicker'
@@ -64,9 +64,9 @@ export function FindATimePage() {
     setSelected(emails)
   }
 
-  function handleBooked(booking: Booking) {
+  function handleBooked(booking: Booking, room: Room) {
     setBookingSlot(undefined)
-    setNotice({ kind: 'success', text: `Booked “${booking.title}” ${formatRange(booking)} in ${booking.roomId}.` })
+    setNotice({ kind: 'success', text: `Booked “${booking.title}” ${formatRange(booking)} in ${room.name}.` })
     void availability.refresh()
   }
 
