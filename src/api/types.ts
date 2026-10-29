@@ -16,6 +16,11 @@ export interface Room {
   capacity: number
 }
 
+export interface Person {
+  email: string
+  name: string
+}
+
 export interface Booking extends Interval {
   id: string
   roomId: string
@@ -25,6 +30,9 @@ export interface Booking extends Interval {
 }
 
 export type NewBooking = Omit<Booking, 'id'>
+
+/** Each person's bookings for one day, keyed by email. */
+export type Availability = Record<string, Booking[]>
 
 export type ApiErrorKind = 'conflict' | 'server' | 'not_found'
 
@@ -36,6 +44,10 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.kind = kind
   }
+}
+
+export function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
 }
 
 export function errorMessage(error: unknown): string {

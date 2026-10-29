@@ -1,6 +1,14 @@
 import { delay } from './delay'
-import { createSeed, type Seed } from './seed'
-import { ApiError, type Booking, type ISODate, type NewBooking, type Room } from './types'
+import { createSeed, ELSEWHERE, type Seed } from './seed'
+import {
+  ApiError,
+  type Availability,
+  type Booking,
+  type ISODate,
+  type NewBooking,
+  type Person,
+  type Room,
+} from './types'
 import { byStart, overlaps } from '../lib/intervals'
 import { formatRange, todayISO } from '../lib/time'
 
@@ -11,6 +19,14 @@ export interface BookingApi {
   cancelBooking(id: string): Promise<void>
   /** Dev helper: books a slot instantly, as if another user did it in another tab. */
   simulateExternalBooking(input: NewBooking): Booking
+  getPeople(signal?: AbortSignal): Promise<Person[]>
+  /** All bookings on `date` that each person attends. One person's bookings may overlap. */
+  getBookingsForPeople(emails: string[], date: ISODate, signal?: AbortSignal): Promise<Availability>
+  /**
+   * Books a room for a group. Rejects with a `conflict` if the room or any attendee
+   * is already busy. Sometimes another user grabs the slot first (`groupConflictRate`).
+   */
+  createGroupBooking(input: NewBooking): Promise<Booking>
 }
 
 export interface MockApiOptions {
@@ -20,6 +36,8 @@ export interface MockApiOptions {
   random?: () => number
   createFailureRate?: number
   cancelFailureRate?: number
+  /** Chance that another user books one attendee right before a group booking lands. */
+  groupConflictRate?: number
   seed?: Seed
 }
 
@@ -33,10 +51,12 @@ export function createMockApi(options: MockApiOptions = {}): BookingApi {
     random = Math.random,
     createFailureRate = 0.1,
     cancelFailureRate = 0.1,
+    groupConflictRate = 0.2,
     seed = createSeed(todayISO()),
   } = options
 
   const rooms: Room[] = structuredClone(seed.rooms)
+  const people: Person[] = structuredClone(seed.people ?? [])
   let bookings: Booking[] = structuredClone(seed.bookings)
   let nextId = 1
 
@@ -47,6 +67,10 @@ export function createMockApi(options: MockApiOptions = {}): BookingApi {
     return bookings.find(
       (b) => b.roomId === input.roomId && b.date === input.date && overlaps(b, input),
     )
+  }
+
+  function bookingsFor(email: string, date: ISODate): Booking[] {
+    return bookings.filter((b) => b.date === date && b.attendees.includes(email))
   }
 
   function insert(input: NewBooking): Booking {
@@ -95,6 +119,51 @@ export function createMockApi(options: MockApiOptions = {}): BookingApi {
     },
 
     simulateExternalBooking(input) {
+      return structuredClone(insert(input))
+    },
+
+    async getPeople(signal) {
+      await wait(signal)
+      return structuredClone(people)
+    },
+
+    async getBookingsForPeople(emails, date, signal) {
+      await wait(signal)
+      const result: Availability = {}
+      for (const email of emails) result[email] = structuredClone(bookingsFor(email, date).sort(byStart))
+      return result
+    },
+
+    async createGroupBooking(input) {
+      await wait()
+      if (random() < createFailureRate) {
+        throw new ApiError('server', 'The booking service is unavailable. Please try again.')
+      }
+      if (input.attendees.length > 0 && random() < groupConflictRate) {
+        // Another user books one of the attendees just before us.
+        const email = input.attendees[Math.floor(random() * input.attendees.length)]
+        insert({
+          roomId: ELSEWHERE,
+          date: input.date,
+          start: input.start,
+          end: input.end,
+          title: 'Booked by someone else',
+          attendees: [email],
+        })
+      }
+      const roomConflict = findConflict(input)
+      if (roomConflict) {
+        throw new ApiError('conflict', `The room was just booked by someone else (${formatRange(roomConflict)}).`)
+      }
+      const busy = input.attendees.filter((email) =>
+        bookingsFor(email, input.date).some((b) => overlaps(b, input)),
+      )
+      if (busy.length > 0) {
+        throw new ApiError(
+          'conflict',
+          `${busy.join(', ')} ${busy.length === 1 ? 'is' : 'are'} no longer free at ${formatRange(input)}.`,
+        )
+      }
       return structuredClone(insert(input))
     },
   }
