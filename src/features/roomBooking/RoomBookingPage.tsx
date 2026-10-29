@@ -1,12 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { isISODate, todayISO } from '../../lib/time'
+import { useApi } from '../../api/ApiContext'
+import { ApiError, type Interval } from '../../api/types'
+import { byStart } from '../../lib/intervals'
+import { formatRange, isISODate, todayISO } from '../../lib/time'
+import type { BookingDraft } from '../../lib/validateBooking'
+import { BookingForm } from './BookingForm'
 import { RoomDaySchedule } from './RoomDaySchedule'
-import { useRoomDay } from './useRoomDay'
+import { dayKey, useRoomDay } from './useRoomDay'
 import { useRooms } from './useRooms'
 import './roomBooking.css'
 
 export function RoomBookingPage() {
+  const api = useApi()
   const [params, setParams] = useSearchParams()
   const roomsState = useRooms()
   const rooms = roomsState.status === 'ready' ? roomsState.rooms : []
@@ -24,9 +30,38 @@ export function RoomBookingPage() {
   }, [room, roomParam, dateParam, date, setParams])
 
   const day = useRoomDay(room?.id, date)
+  const [notice, setNotice] = useState<string>()
 
   function select(next: { room?: string; date?: string }) {
+    setNotice(undefined)
     setParams({ room: next.room ?? room?.id ?? '', date: next.date || date })
+  }
+
+  async function createBooking(draft: BookingDraft) {
+    if (!room) return
+    const key = dayKey(room.id, date)
+    setNotice(undefined)
+    try {
+      const created = await api.createBooking({ ...draft, roomId: room.id, date })
+      day.updateBookings(key, (bookings) => [...bookings, created].sort(byStart))
+      setNotice(`Booked “${created.title}” for ${formatRange(created)}.`)
+    } catch (error) {
+      // Someone else got there first: refresh so the schedule (and the overlap check) see it.
+      if (error instanceof ApiError && error.kind === 'conflict') day.reload()
+      throw error
+    }
+  }
+
+  function simulateConflict(range: Interval) {
+    if (!room) return
+    api.simulateExternalBooking({
+      ...range,
+      roomId: room.id,
+      date,
+      title: 'Booked by another user',
+      attendees: [],
+    })
+    setNotice(`Another user just booked ${formatRange(range)}. Your schedule doesn't show it yet, so try booking it.`)
   }
 
   return (
@@ -74,6 +109,20 @@ export function RoomBookingPage() {
             </p>
           )}
           {day.status === 'ready' && <RoomDaySchedule bookings={day.bookings} />}
+        </div>
+
+        <div className="card">
+          {notice && (
+            <p className="banner success" role="status">
+              {notice}
+            </p>
+          )}
+          <BookingForm
+            existing={day.bookings}
+            disabled={!room || day.status !== 'ready'}
+            onSubmit={createBooking}
+            onSimulateConflict={simulateConflict}
+          />
         </div>
       </div>
     </section>

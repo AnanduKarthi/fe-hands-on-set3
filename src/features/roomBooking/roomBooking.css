@@ -74,3 +74,105 @@
   align-items: center;
   justify-self: end;
 }
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.booking-form h2 {
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field label,
+.attendees legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.field input,
+.field select {
+  width: 100%;
+}
+
+[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.time-row + .field-error {
+  margin-top: -0.5rem;
+}
+
+.attendees {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.attendee-entry {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.attendee-entry input {
+  flex: 1;
+  min-width: 0;
+}
+
+.chips {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--accent-bg);
+  border-radius: 999px;
+  padding: 0.15rem 0.25rem 0.15rem 0.65rem;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.chip button {
+  border: none;
+  background: transparent;
+  padding: 0 0.35rem;
+  line-height: 1.4;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text-muted);
+  text-decoration: underline;
+  font-size: 0.85rem;
+}
