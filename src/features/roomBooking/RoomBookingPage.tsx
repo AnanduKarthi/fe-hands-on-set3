@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useApi } from '../../api/ApiContext'
-import { ApiError, type Interval } from '../../api/types'
+import { ApiError, errorMessage, type Booking, type Interval } from '../../api/types'
 import { byStart } from '../../lib/intervals'
 import { formatRange, isISODate, todayISO } from '../../lib/time'
 import type { BookingDraft } from '../../lib/validateBooking'
@@ -31,9 +31,11 @@ export function RoomBookingPage() {
 
   const day = useRoomDay(room?.id, date)
   const [notice, setNotice] = useState<string>()
+  const [cancelError, setCancelError] = useState<string>()
 
   function select(next: { room?: string; date?: string }) {
     setNotice(undefined)
+    setCancelError(undefined)
     setParams({ room: next.room ?? room?.id ?? '', date: next.date || date })
   }
 
@@ -49,6 +51,24 @@ export function RoomBookingPage() {
       // Someone else got there first: refresh so the schedule (and the overlap check) see it.
       if (error instanceof ApiError && error.kind === 'conflict') day.reload()
       throw error
+    }
+  }
+
+  /** Optimistic: remove right away, put it back if the API call fails. */
+  async function cancelBooking(booking: Booking) {
+    const key = day.key
+    setNotice(undefined)
+    setCancelError(undefined)
+    day.updateBookings(key, (bookings) => bookings.filter((b) => b.id !== booking.id))
+    try {
+      await api.cancelBooking(booking.id)
+      setNotice(`Cancelled “${booking.title}” (${formatRange(booking)}).`)
+    } catch (error) {
+      if (error instanceof ApiError && error.kind === 'not_found') return // already gone
+      day.updateBookings(key, (bookings) =>
+        bookings.some((b) => b.id === booking.id) ? bookings : [...bookings, booking].sort(byStart),
+      )
+      setCancelError(`Could not cancel “${booking.title}”: ${errorMessage(error)}`)
     }
   }
 
@@ -108,7 +128,12 @@ export function RoomBookingPage() {
               </button>
             </p>
           )}
-          {day.status === 'ready' && <RoomDaySchedule bookings={day.bookings} />}
+          {cancelError && (
+            <p className="banner error" role="alert">
+              {cancelError}
+            </p>
+          )}
+          {day.status === 'ready' && <RoomDaySchedule bookings={day.bookings} onCancel={cancelBooking} />}
         </div>
 
         <div className="card">

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Booking } from '../../api/types'
 import { DAY_END, DAY_START, formatRange } from '../../lib/time'
 
@@ -18,9 +19,11 @@ function buildAgenda(bookings: Booking[]): AgendaItem[] {
 
 interface Props {
   bookings: Booking[]
+  onCancel: (booking: Booking) => void
 }
 
-export function RoomDaySchedule({ bookings }: Props) {
+export function RoomDaySchedule({ bookings, onCancel }: Props) {
+  const [confirmingId, setConfirmingId] = useState<string>()
   const agenda = buildAgenda(bookings)
 
   return (
@@ -35,6 +38,34 @@ export function RoomDaySchedule({ bookings }: Props) {
           <li key={item.booking.id} className="agenda-booking">
             <span className="agenda-time">{formatRange(item.booking)}</span>
             <span className="agenda-title">{item.booking.title}</span>
+            <span className="agenda-actions">
+              {confirmingId === item.booking.id ? (
+                <>
+                  <span className="muted">Cancel this booking?</span>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      setConfirmingId(undefined)
+                      onCancel(item.booking)
+                    }}
+                  >
+                    Yes, cancel
+                  </button>
+                  <button type="button" onClick={() => setConfirmingId(undefined)}>
+                    Keep
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Cancel ${item.booking.title} ${formatRange(item.booking)}`}
+                  onClick={() => setConfirmingId(item.booking.id)}
+                >
+                  Cancel
+                </button>
+              )}
+            </span>
             {item.booking.attendees.length > 0 && (
               <span className="muted agenda-attendees">{item.booking.attendees.join(', ')}</span>
             )}

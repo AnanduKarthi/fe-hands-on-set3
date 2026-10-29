@@ -176,3 +176,8 @@
   text-decoration: underline;
   font-size: 0.85rem;
 }
+
+button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
