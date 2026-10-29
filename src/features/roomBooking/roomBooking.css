@@ -1,0 +1,76 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.room-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .room-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.agenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.agenda li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+}
+
+.agenda-free {
+  border: 1px dashed var(--border);
+}
+
+.agenda-booking {
+  background: var(--accent-bg);
+  border-left: 4px solid var(--accent);
+}
+
+.agenda-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.agenda-title {
+  font-weight: 600;
+}
+
+.agenda-attendees {
+  grid-column: 2 / 4;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.agenda-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-self: end;
+}
